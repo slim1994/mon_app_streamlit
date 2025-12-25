@@ -1,0 +1,46 @@
+import streamlit as st
+import pandas as pd
+
+st.set_page_config(page_title="Simulation interactive CSV", layout="wide")
+st.title("📊 Simulation interactive CSV")
+
+# Upload CSV
+uploaded_file = st.file_uploader("Importer un fichier CSV", type=["csv"])
+
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    st.subheader("Aperçu des données")
+    st.dataframe(df.head())
+
+    # Sélection des colonnes numériques
+    numeric_cols = df.select_dtypes(include="number").columns.tolist()
+    cols_selected = st.multiselect(
+        "Sélectionner les colonnes à ajuster",
+        numeric_cols,
+        default=numeric_cols[:1]  # par défaut, la première colonne
+    )
+
+    # Paramètre modifiable
+    facteur = st.number_input("Facteur multiplicatif", value=1.0, step=0.1)
+
+    # Calcul dynamique pour toutes les colonnes sélectionnées
+    for col in cols_selected:
+        df[f"{col}_ajustée"] = df[col] * facteur
+
+    st.subheader("Résultat simulé")
+    st.dataframe(df)
+
+    # Statistiques simples
+    st.subheader("Statistiques")
+    for col in cols_selected:
+        st.metric(f"Moyenne {col}_ajustée", round(df[f"{col}_ajustée"].mean(), 2))
+        st.metric(f"Total {col}_ajustée", round(df[f"{col}_ajustée"].sum(), 2))
+
+    # Export CSV final
+    csv = df.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        label="📥 Télécharger la version CSV finale",
+        data=csv,
+        file_name="resultat_simulation.csv",
+        mime="text/csv"
+    )
